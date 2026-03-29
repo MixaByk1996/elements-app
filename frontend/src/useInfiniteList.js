@@ -1,9 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
 
-/**
- * Hook for paginated infinite scroll list.
- * @param {Function} fetcher  async (filter, page) => { items, hasMore }
- */
 export function useInfiniteList(fetcher) {
   const [items, setItems] = useState([]);
   const [hasMore, setHasMore] = useState(true);
@@ -35,8 +31,7 @@ export function useInfiniteList(fetcher) {
     filterRef.current = value;
     setFilterState(value);
     pageRef.current = 1;
-    // Trigger a fresh load
-    setLoading(false); // reset loading state so load() proceeds
+    setLoading(false);
     setItems([]);
     setHasMore(true);
   }, []);

@@ -39,7 +39,7 @@ function SortableItem({ item, onDeselect }) {
       <button
         className="deselect-btn"
         onClick={() => onDeselect(item.id)}
-        title="Move back to left panel"
+        title="Переместить обратно в левую панель"
       >
         ←
       </button>
@@ -59,7 +59,6 @@ export function RightPanel({ onDeselect, refreshRef }) {
   const bottomRef = useRef(null);
   const [activeId, setActiveId] = useState(null);
 
-  // Expose refresh to parent
   useEffect(() => {
     if (refreshRef) {
       refreshRef.current = () => {
@@ -70,19 +69,16 @@ export function RightPanel({ onDeselect, refreshRef }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshRef, filter]);
 
-  // Initial load
   useEffect(() => {
     load(true, '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-load on filter change
   useEffect(() => {
     load(true, filter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
-  // Infinite scroll
   useEffect(() => {
     if (!bottomRef.current) return;
     const observer = new IntersectionObserver(
@@ -112,7 +108,6 @@ export function RightPanel({ onDeselect, refreshRef }) {
       const newIndex = prev.findIndex(i => i.id === over.id);
       if (oldIndex === -1 || newIndex === -1) return prev;
       const newOrder = arrayMove(prev, oldIndex, newIndex);
-      // Queue the sort update — send full visible order; server merges with hidden pages
       queueSort(newOrder.map(i => i.id));
       return newOrder;
     });
@@ -120,7 +115,6 @@ export function RightPanel({ onDeselect, refreshRef }) {
 
   const handleDeselect = (id) => {
     queueDeselect([id], () => onDeselect(id));
-    // Optimistic: remove from right list
     setItems(prev => prev.filter(item => item.id !== id));
     onDeselect(id);
   };
@@ -129,12 +123,12 @@ export function RightPanel({ onDeselect, refreshRef }) {
 
   return (
     <div className="panel">
-      <h2>Selected Elements</h2>
+      <h2>Выбранные элементы</h2>
 
       <div className="panel-controls">
         <input
           type="text"
-          placeholder="Filter by ID..."
+          placeholder="Фильтр по ID..."
           value={filter}
           onChange={e => setFilter(e.target.value)}
           className="filter-input"
@@ -167,9 +161,9 @@ export function RightPanel({ onDeselect, refreshRef }) {
           </DragOverlay>
         </DndContext>
 
-        {loading && <div className="loading">Loading...</div>}
+        {loading && <div className="loading">Загрузка...</div>}
         {!hasMore && !loading && items.length === 0 && (
-          <div className="empty">No selected elements</div>
+          <div className="empty">Нет выбранных элементов</div>
         )}
         <div ref={bottomRef} className="scroll-anchor" />
       </div>
