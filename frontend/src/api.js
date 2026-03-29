@@ -1,32 +1,17 @@
-/**
- * Request queue with deduplication and batching.
- *
- * - "add" requests are batched and flushed every 10 seconds
- * - "read/modify" requests (select, deselect, sort, get) are batched and flushed every 1 second
- * - Deduplication: identical in-flight requests are merged (same key won't be queued twice)
- */
-
 const BASE_URL = process.env.REACT_APP_API_URL || '';
 
-// ─── Simple queue implementation ─────────────────────────────────────────────
+const ADD_INTERVAL = 10_000;
+const READ_INTERVAL = 1_000;
 
-const ADD_INTERVAL = 10_000;  // 10 seconds for add batching
-const READ_INTERVAL = 1_000;  // 1 second for read/modify batching
-
-// Pending add IDs (deduped set)
 let pendingAddIds = new Set();
 let addFlushTimer = null;
 
-// Pending select IDs
 let pendingSelectIds = new Set();
-// Pending deselect IDs
 let pendingDeselectIds = new Set();
-// Latest sort order (replaces previous pending sort)
 let pendingSortOrder = null;
 
 let readFlushTimer = null;
 
-// Callbacks to invoke after flush
 const flushCallbacks = { add: [], readModify: [] };
 
 function scheduleAddFlush() {
@@ -54,7 +39,6 @@ async function flushAddQueue() {
     });
   } catch (e) {
     console.error('Failed to flush add queue:', e);
-    // Re-add on failure
     ids.forEach(id => pendingAddIds.add(id));
     scheduleAddFlush();
     return;
@@ -117,8 +101,6 @@ async function flushReadQueue() {
   cbs.forEach(cb => cb());
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
 export function queueAdd(ids, onFlushed) {
   ids.forEach(id => pendingAddIds.add(id));
   if (onFlushed) flushCallbacks.add.push(onFlushed);
@@ -126,7 +108,6 @@ export function queueAdd(ids, onFlushed) {
 }
 
 export function queueSelect(ids, onFlushed) {
-  // Remove from pending deselect (cancel-out)
   ids.forEach(id => {
     pendingDeselectIds.delete(id);
     pendingSelectIds.add(id);
@@ -145,12 +126,11 @@ export function queueDeselect(ids, onFlushed) {
 }
 
 export function queueSort(order, onFlushed) {
-  pendingSortOrder = order; // Latest wins
+  pendingSortOrder = order;
   if (onFlushed) flushCallbacks.readModify.push(onFlushed);
   scheduleReadFlush();
 }
 
-// Immediate fetch (bypasses queue — used for initial data load)
 export async function fetchLeftElements(filter, page, limit = 20) {
   const params = new URLSearchParams({ page, limit });
   if (filter) params.set('filter', filter);

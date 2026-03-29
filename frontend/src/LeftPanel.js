@@ -8,12 +8,12 @@ export function LeftPanel({ onSelect, refreshRef }) {
     []
   );
 
-  const { items, hasMore, loading, filter, setFilter, load, refresh } = useInfiniteList(fetcher);
+  const { items, setItems, hasMore, loading, filter, setFilter, load, refresh } = useInfiniteList(fetcher);
 
   const bottomRef = useRef(null);
   const [newId, setNewId] = useState('');
+  const [addError, setAddError] = useState('');
 
-  // Expose refresh to parent
   useEffect(() => {
     if (refreshRef) {
       refreshRef.current = () => {
@@ -23,21 +23,17 @@ export function LeftPanel({ onSelect, refreshRef }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshRef, filter]);
-  const [addError, setAddError] = useState('');
 
-  // Initial load
   useEffect(() => {
     load(true, '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-load when filter changes
   useEffect(() => {
     load(true, filter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
-  // Intersection observer for infinite scroll
   useEffect(() => {
     if (!bottomRef.current) return;
     const observer = new IntersectionObserver(
@@ -53,38 +49,35 @@ export function LeftPanel({ onSelect, refreshRef }) {
   }, [hasMore, loading, load]);
 
   const handleSelect = (id) => {
+    setItems(prev => prev.filter(item => item.id !== id));
     queueSelect([id], () => {
-      // After server confirms, refresh both panels via callback
       onSelect(id);
     });
-    // Optimistic: remove from left list immediately
     onSelect(id);
   };
 
   const handleAddElement = () => {
     const parsed = parseInt(newId, 10);
     if (isNaN(parsed)) {
-      setAddError('Please enter a valid integer ID');
+      setAddError('Введите корректный числовой ID');
       return;
     }
     setAddError('');
     queueAdd([parsed], () => {
-      // After add is flushed, refresh left panel
       refresh();
       load(true, filter);
     });
     setNewId('');
-    // Optimistic: if the ID is outside 1..1M range, show a notice
   };
 
   return (
     <div className="panel">
-      <h2>All Elements</h2>
+      <h2>Все элементы</h2>
 
       <div className="panel-controls">
         <input
           type="text"
-          placeholder="Filter by ID..."
+          placeholder="Фильтр по ID..."
           value={filter}
           onChange={e => setFilter(e.target.value)}
           className="filter-input"
@@ -94,13 +87,13 @@ export function LeftPanel({ onSelect, refreshRef }) {
       <div className="add-element">
         <input
           type="number"
-          placeholder="New element ID..."
+          placeholder="ID нового элемента..."
           value={newId}
           onChange={e => setNewId(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleAddElement()}
           className="filter-input"
         />
-        <button onClick={handleAddElement} className="btn">Add</button>
+        <button onClick={handleAddElement} className="btn">Добавить</button>
         {addError && <span className="error">{addError}</span>}
       </div>
 
@@ -110,15 +103,15 @@ export function LeftPanel({ onSelect, refreshRef }) {
             key={item.id}
             className="list-item"
             onClick={() => handleSelect(item.id)}
-            title="Click to select"
+            title="Нажмите для выбора"
           >
             <span className="item-id">#{item.id}</span>
             <span className="item-action">→</span>
           </div>
         ))}
-        {loading && <div className="loading">Loading...</div>}
+        {loading && <div className="loading">Загрузка...</div>}
         {!hasMore && !loading && items.length === 0 && (
-          <div className="empty">No elements found</div>
+          <div className="empty">Элементы не найдены</div>
         )}
         <div ref={bottomRef} className="scroll-anchor" />
       </div>
