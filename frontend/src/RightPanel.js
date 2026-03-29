@@ -116,7 +116,6 @@ export function RightPanel({ onDeselect, refreshRef }) {
   const handleDeselect = (id) => {
     queueDeselect([id], () => onDeselect(id));
     setItems(prev => prev.filter(item => item.id !== id));
-    onDeselect(id);
   };
 
   const activeItem = activeId != null ? items.find(i => i.id === activeId) : null;
