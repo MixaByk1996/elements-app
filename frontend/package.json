@@ -10,6 +10,16 @@
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1"
   },
+  "devDependencies": {
+    "eslint-plugin-react-hooks": "^4.6.2"
+  },
+  "eslintConfig": {
+    "extends": ["react-app"],
+    "plugins": ["react-hooks"],
+    "rules": {
+      "react-hooks/exhaustive-deps": "warn"
+    }
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "CI=false DISABLE_ESLINT_PLUGIN=true react-scripts build"
