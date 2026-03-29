@@ -50,10 +50,15 @@ export function LeftPanel({ onSelect, refreshRef }) {
 
   const handleSelect = (id) => {
     setItems(prev => prev.filter(item => item.id !== id));
-    queueSelect([id], () => {
+    queueSelect([id], (result) => {
+      if (result && result.duplicates && result.duplicates.includes(id)) {
+        setAddError(`Элемент #${id} уже выбран`);
+        refresh();
+        load(true, filter);
+        return;
+      }
       onSelect(id);
     });
-    onSelect(id);
   };
 
   const handleAddElement = () => {
@@ -63,7 +68,13 @@ export function LeftPanel({ onSelect, refreshRef }) {
       return;
     }
     setAddError('');
-    queueAdd([parsed], () => {
+    queueAdd([parsed], (result, requestedIds) => {
+      if (result && result.added && requestedIds) {
+        const notAdded = requestedIds.filter(id => !result.added.includes(id));
+        if (notAdded.includes(parsed)) {
+          setAddError(`Элемент #${parsed} уже существует`);
+        }
+      }
       refresh();
       load(true, filter);
     });

@@ -31,12 +31,14 @@ async function flushAddQueue() {
   const ids = Array.from(pendingAddIds);
   pendingAddIds = new Set();
 
+  let result = null;
   try {
-    await fetch(`${BASE_URL}/api/elements/add`, {
+    const res = await fetch(`${BASE_URL}/api/elements/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids }),
     });
+    result = await res.json();
   } catch (e) {
     console.error('Failed to flush add queue:', e);
     ids.forEach(id => pendingAddIds.add(id));
@@ -45,7 +47,7 @@ async function flushAddQueue() {
   }
 
   const cbs = flushCallbacks.add.splice(0);
-  cbs.forEach(cb => cb());
+  cbs.forEach(cb => cb(result, ids));
 }
 
 async function flushReadQueue() {
@@ -61,14 +63,14 @@ async function flushReadQueue() {
 
   const promises = [];
 
+  let selectPromise = null;
   if (selectIds.length > 0) {
-    promises.push(
-      fetch(`${BASE_URL}/api/elements/select`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: selectIds }),
-      })
-    );
+    selectPromise = fetch(`${BASE_URL}/api/elements/select`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: selectIds }),
+    }).then(r => r.json());
+    promises.push(selectPromise);
   }
 
   if (deselectIds.length > 0) {
@@ -91,14 +93,18 @@ async function flushReadQueue() {
     );
   }
 
+  let selectResult = null;
   try {
     await Promise.all(promises);
+    if (selectPromise) {
+      selectResult = await selectPromise;
+    }
   } catch (e) {
     console.error('Failed to flush read/modify queue:', e);
   }
 
   const cbs = flushCallbacks.readModify.splice(0);
-  cbs.forEach(cb => cb());
+  cbs.forEach(cb => cb(selectResult));
 }
 
 export function queueAdd(ids, onFlushed) {

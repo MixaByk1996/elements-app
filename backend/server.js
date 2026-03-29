@@ -87,15 +87,22 @@ app.post('/api/elements/select', (req, res) => {
     return res.status(400).json({ error: 'ids must be an array' });
   }
 
+  const added = [];
+  const duplicates = [];
   for (const id of ids) {
     const numId = Number(id);
-    if (!isNaN(numId) && !state.selectedIds.has(numId)) {
-      state.selectedIds.add(numId);
-      state.sortOrder.push(numId);
+    if (!isNaN(numId)) {
+      if (state.selectedIds.has(numId)) {
+        duplicates.push(numId);
+      } else {
+        state.selectedIds.add(numId);
+        state.sortOrder.push(numId);
+        added.push(numId);
+      }
     }
   }
 
-  res.json({ ok: true, selectedCount: state.selectedIds.size });
+  res.json({ ok: true, added, duplicates, selectedCount: state.selectedIds.size });
 });
 
 app.post('/api/elements/deselect', (req, res) => {
